@@ -1,6 +1,0 @@
-{
-    "name": "Nexus Flow Template",
-    "port": 3002,
-    "command": "npm run dev -- -p 3002",
-    "liveUrl": "http://localhost:3002"
-}
