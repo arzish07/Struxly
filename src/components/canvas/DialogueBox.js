@@ -24,6 +24,7 @@ import {
     Eye,
     Code,
     Loader2,
+    Undo2,
 } from "lucide-react";
 import { useCanvas } from "@/context/CanvasContext";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -61,7 +62,7 @@ const INTENT_STATUSES = [
 ];
 
 // Lovable-style Action Block — shows live progress, then becomes a permanent card
-function ActionBlock({ isActive, isIntentPhase, promptText, completedMessage, onToggleDetails }) {
+function ActionBlock({ isActive, isIntentPhase, promptText, completedMessage, onToggleDetails, onUndo, canUndo }) {
     const statuses = isIntentPhase ? INTENT_STATUSES : GENERATION_STATUSES;
     const [statusIndex, setStatusIndex] = useState(0);
     const [showDetails, setShowDetails] = useState(false);
@@ -145,7 +146,18 @@ function ActionBlock({ isActive, isIntentPhase, promptText, completedMessage, on
                             <span className="text-[12px] font-semibold text-gray-800">Edited</span>
                             <span className="text-[12px] font-mono text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">App.jsx</span>
                         </div>
-                        <ChevronRight className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${showDetails ? 'rotate-90' : ''}`} />
+                        <div className="flex items-center gap-1">
+                            {canUndo && onUndo && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onUndo(); }}
+                                    className="p-1 rounded-md hover:bg-amber-50 text-gray-400 hover:text-amber-600 transition-colors"
+                                    title="Undo to previous version"
+                                >
+                                    <Undo2 className="w-3.5 h-3.5" />
+                                </button>
+                            )}
+                            <ChevronRight className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${showDetails ? 'rotate-90' : ''}`} />
+                        </div>
                     </button>
 
                     {/* Expandable details panel */}
@@ -229,6 +241,8 @@ function DialogueBoxContent() {
         addToQueue,
         removeFromQueue,
         shiftQueue,
+        undoCode,
+        canUndo,
     } = useCanvas();
     const { user, profile: userData } = useAuth();
     const { touchProject, updateProjectDetails, projects } = useProjects();
@@ -958,6 +972,15 @@ function DialogueBoxContent() {
                                 isIntentPhase={false}
                                 promptText=""
                                 completedMessage={msg.content}
+                                canUndo={canUndo}
+                                onUndo={() => {
+                                    undoCode();
+                                    addMessage({
+                                        id: `msg-${Date.now()}-undo`,
+                                        role: "system",
+                                        content: "↩ Reverted to the previous version.",
+                                    });
+                                }}
                             />
                         )}
 

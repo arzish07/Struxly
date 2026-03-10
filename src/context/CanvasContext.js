@@ -30,6 +30,7 @@ const initialState = {
     suggestions: [],
     isAwaitingInstructions: false,
     promptQueue: [], // Array of { id, text, timestamp }
+    codeHistory: [], // Stack of previous code snapshots for undo
 };
 
 function canvasReducer(state, action) {
@@ -87,6 +88,23 @@ function canvasReducer(state, action) {
                 ...state,
                 generatedCode: action.payload,
             };
+
+        case "PUSH_CODE_HISTORY":
+            return {
+                ...state,
+                codeHistory: [...state.codeHistory, action.payload],
+            };
+
+        case "UNDO_CODE": {
+            if (state.codeHistory.length === 0) return state;
+            const newHistory = [...state.codeHistory];
+            const previousCode = newHistory.pop();
+            return {
+                ...state,
+                generatedCode: previousCode,
+                codeHistory: newHistory,
+            };
+        }
 
         case "SET_PROJECT_ID":
             return {
@@ -298,14 +316,29 @@ export function CanvasProvider({ children }) {
     );
     const setGeneratedCode = useCallback(
         (code) => {
+            // Snapshot current code before replacing (for undo)
+            if (state.generatedCode) {
+                dispatch({ type: "PUSH_CODE_HISTORY", payload: state.generatedCode });
+            }
             dispatch({ type: "SET_GENERATED_CODE", payload: code });
             // Persist to DB
             if (state.projectId) {
                 saveProjectCode(state.projectId, code).catch(err => console.warn("⚠️ Code save skipped:", err.message));
             }
         },
-        [state.projectId]
+        [state.projectId, state.generatedCode]
     );
+
+    const undoCode = useCallback(() => {
+        dispatch({ type: "UNDO_CODE" });
+        // Also persist the reverted code to DB
+        const previousCode = state.codeHistory[state.codeHistory.length - 1];
+        if (state.projectId && previousCode) {
+            saveProjectCode(state.projectId, previousCode).catch(err => console.warn("⚠️ Undo save skipped:", err.message));
+        }
+    }, [state.projectId, state.codeHistory]);
+
+    const canUndo = state.codeHistory.length > 0;
     const setIsGenerating = useCallback(
         (isGen) => dispatch({ type: "SET_IS_GENERATING", payload: isGen }),
         []
@@ -370,6 +403,8 @@ export function CanvasProvider({ children }) {
         addToQueue,
         removeFromQueue,
         shiftQueue,
+        undoCode,
+        canUndo,
         isLoaded,
     }), [
         state,
@@ -389,6 +424,8 @@ export function CanvasProvider({ children }) {
         addToQueue,
         removeFromQueue,
         shiftQueue,
+        undoCode,
+        canUndo,
         isLoaded,
     ]);
 
