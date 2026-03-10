@@ -42,54 +42,54 @@ function SettingsSidebar() {
                         <Link href="/portal/settings/domains" className={linkClass("/portal/settings/domains")}>
                             <Globe className="w-4 h-4" /> Domains
                         </Link>
-                        <button className={`${linkClass("")}`}>
+                        <Link href="/portal/settings/knowledge" className={linkClass("/portal/settings/knowledge")}>
                             <BookOpen className="w-4 h-4" /> Knowledge
-                        </button>
+                        </Link>
                     </div>
                 </div>
 
                 <div>
                     <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">Workspace</p>
                     <div className="space-y-0.5">
-                        <button className={`${linkClass("")}`}>
+                        <Link href="/portal/settings/workspace" className={linkClass("/portal/settings/workspace")}>
                             <User className="w-4 h-4" /> Struxly Workspace
-                        </button>
-                        <button className={`${linkClass("")}`}>
+                        </Link>
+                        <Link href="/portal/settings/people" className={linkClass("/portal/settings/people")}>
                             <Users className="w-4 h-4" /> People
-                        </button>
+                        </Link>
                         <Link href="/portal/settings/plans" className={linkClass("/portal/settings/plans")}>
                             <CreditCard className="w-4 h-4" /> Plans & credits
                         </Link>
                         <Link href="/portal/settings/cloud" className={linkClass("/portal/settings/cloud")}>
                             <Cloud className="w-4 h-4" /> Cloud & AI balance
                         </Link>
-                        <button className={`${linkClass("")}`}>
+                        <Link href="/portal/settings/security" className={linkClass("/portal/settings/security")}>
                             <Shield className="w-4 h-4" /> Privacy & security
-                        </button>
+                        </Link>
                     </div>
                 </div>
 
                 <div>
                     <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">Account</p>
                     <div className="space-y-0.5">
-                        <button className={`${linkClass("")}`}>
+                        <Link href="/portal/settings/profile" className={linkClass("/portal/settings/profile")}>
                             <User className="w-4 h-4" /> Profile
-                        </button>
-                        <button className={`${linkClass("")}`}>
+                        </Link>
+                        <Link href="/portal/settings/labs" className={linkClass("/portal/settings/labs")}>
                             <FlaskConical className="w-4 h-4" /> Labs
-                        </button>
+                        </Link>
                     </div>
                 </div>
 
                 <div>
                     <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">Connectors</p>
                     <div className="space-y-0.5">
-                        <button className={`${linkClass("")}`}>
+                        <Link href="/portal/settings/connectors" className={linkClass("/portal/settings/connectors")}>
                             <Link2 className="w-4 h-4" /> Connectors
-                        </button>
-                        <button className={`${linkClass("")}`}>
+                        </Link>
+                        <Link href="/portal/settings/github" className={linkClass("/portal/settings/github")}>
                             <Github className="w-4 h-4" /> GitHub
-                        </button>
+                        </Link>
                     </div>
                 </div>
             </div>
