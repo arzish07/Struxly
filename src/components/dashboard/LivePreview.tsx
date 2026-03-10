@@ -49,33 +49,79 @@ body::-webkit-scrollbar-thumb:hover {
 }
 `;
 
-const inspectorScript = `
-window.addEventListener('click', (e) => {
-    if (!window.__INSPECTOR_ACTIVE__) return;
-    e.preventDefault();
-    e.stopPropagation();
+// Inspector script lives in its own Sandpack file so it executes properly inside the iframe
+function getInspectorScript(active: boolean) {
+    return `
+// Inspector state — toggled by the parent
+window.__INSPECTOR_ACTIVE__ = ${active};
 
-    const el = e.target;
-    const label = el.innerText?.slice(0, 20) || el.tagName;
+(function() {
+    if (window.__INSPECTOR_BOUND__) return;
+    window.__INSPECTOR_BOUND__ = true;
 
-    window.parent.postMessage({
-        type: 'ELEMENT_SELECTED',
-        label: label,
-        id: el.id || 'el-' + Math.random().toString(36).substr(2, 9)
-    }, '*');
-}, true);
+    let lastHighlighted = null;
 
-window.addEventListener('mouseover', (e) => {
-    if (!window.__INSPECTOR_ACTIVE__) return;
-    e.target.style.outline = '2px solid #6366f1';
-    e.target.style.cursor = 'pointer';
-});
+    function getSelector(el) {
+        if (el.id) return '#' + el.id;
+        const tag = el.tagName.toLowerCase();
+        const cls = Array.from(el.classList || []).slice(0, 2).join('.');
+        return cls ? tag + '.' + cls : tag;
+    }
 
-window.addEventListener('mouseout', (e) => {
-    if (!window.__INSPECTOR_ACTIVE__) return;
-    e.target.style.outline = '';
-});
+    function getLabel(el) {
+        // Use aria-label, alt, innerText (truncated), or tagName
+        if (el.getAttribute('aria-label')) return el.getAttribute('aria-label').slice(0, 30);
+        if (el.alt) return el.alt.slice(0, 30);
+        const text = (el.innerText || '').trim();
+        if (text && text.length <= 30) return text;
+        if (text) return text.slice(0, 27) + '...';
+        return '<' + el.tagName.toLowerCase() + '>';
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!window.__INSPECTOR_ACTIVE__) return;
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        var el = e.target;
+        window.parent.postMessage({
+            type: 'ELEMENT_SELECTED',
+            label: getLabel(el),
+            id: el.id || 'el-' + Math.random().toString(36).substr(2, 9),
+            tagName: el.tagName.toLowerCase(),
+            selector: getSelector(el)
+        }, '*');
+    }, true);
+
+    document.addEventListener('mouseover', function(e) {
+        if (!window.__INSPECTOR_ACTIVE__) return;
+        var el = e.target;
+        if (lastHighlighted && lastHighlighted !== el) {
+            lastHighlighted.style.outline = '';
+            lastHighlighted.style.outlineOffset = '';
+            lastHighlighted.style.boxShadow = '';
+            lastHighlighted.style.cursor = '';
+        }
+        el.style.outline = '2px solid #6366f1';
+        el.style.outlineOffset = '2px';
+        el.style.boxShadow = '0 0 0 4px rgba(99, 102, 241, 0.15)';
+        el.style.cursor = 'crosshair';
+        lastHighlighted = el;
+    }, true);
+
+    document.addEventListener('mouseout', function(e) {
+        if (!window.__INSPECTOR_ACTIVE__) return;
+        var el = e.target;
+        el.style.outline = '';
+        el.style.outlineOffset = '';
+        el.style.boxShadow = '';
+        el.style.cursor = '';
+        if (lastHighlighted === el) lastHighlighted = null;
+    }, true);
+})();
 `;
+}
 
 export function LivePreview({ code, inspectorActive, onElementSelect }: LivePreviewProps) {
     const [mounted, setMounted] = useState(false);
@@ -96,13 +142,9 @@ export function LivePreview({ code, inspectorActive, onElementSelect }: LivePrev
 
     if (!mounted) return null;
 
-    // We inject the inspector state into the code via a simple variable
-    const finalCode = `
-      ${code}
-// @ts-ignore
-window.__INSPECTOR_ACTIVE__ = ${!!inspectorActive};
-      ${inspectorScript}
-`;
+    // Keep user code clean — inspector runs from its own file
+    const finalCode = `import './inspector';\n${code}`;
+    const inspectorCode = getInspectorScript(!!inspectorActive);
 
     return (
         <div className="absolute inset-0 flex flex-col overflow-hidden">
@@ -126,6 +168,10 @@ window.__INSPECTOR_ACTIVE__ = ${!!inspectorActive};
                     "/App.tsx": {
                         code: finalCode,
                         active: true,
+                    },
+                    "/inspector.js": {
+                        code: inspectorCode,
+                        hidden: true,
                     },
                     "/index.css": {
                         code: tailwindCSS,

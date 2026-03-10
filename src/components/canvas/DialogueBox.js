@@ -286,6 +286,13 @@ function DialogueBoxContent() {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [chatMessages]);
 
+    // Auto-focus input when an element is selected via the inspector
+    useEffect(() => {
+        if (selectedElement && inputRef.current) {
+            inputRef.current.focus();
+        }
+    }, [selectedElement]);
+
     // Initialize Speech Recognition — continuous mode with interim results
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -495,6 +502,11 @@ function DialogueBoxContent() {
         }
 
         handlePromptText(promptText);
+
+        // Auto-deselect any selected element after sending so next prompt starts fresh
+        if (selectedElement) {
+            deselectElement();
+        }
     };
 
     // Queue Processor: auto-execute next queued prompt when AI becomes idle

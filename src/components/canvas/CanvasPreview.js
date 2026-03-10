@@ -63,12 +63,20 @@ function CanvasPreviewContent() {
                 {isAwaitingInstructions || initialPrompt ? (
                     <AwaitingInstructionsCarousel />
                 ) : generatedCode ? (
-                    <div className="w-full h-full overflow-auto">
+                    <div className="w-full h-full overflow-auto relative">
                         <LivePreview
                             code={generatedCode}
                             inspectorActive={inspectorActive}
                             onElementSelect={selectElement}
                         />
+                        {inspectorActive && (
+                            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white rounded-full shadow-lg text-[12px] font-medium animate-pulse">
+                                    <span>🎯</span>
+                                    <span>Click any element to select it</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 ) : hasLiveUrl ? (
                     <iframe
