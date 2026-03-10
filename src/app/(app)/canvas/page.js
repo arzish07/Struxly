@@ -12,6 +12,7 @@ import {
     Download,
     Copy,
     RotateCw,
+    PanelLeftClose,
 } from "lucide-react";
 import { CanvasProvider, useCanvas } from "@/context/CanvasContext";
 import { useNotifications } from "@/context/NotificationContext";
@@ -23,7 +24,7 @@ import DeployPanel from "@/components/deploy/DeployPanel";
 import CodeEditorWorkspace from "@/components/canvas/CodeEditorWorkspace";
 
 
-function CanvasToolbar() {
+function CanvasToolbar({ sidebarOpen, setSidebarOpen }) {
     const {
         activeView,
         setActiveView,
@@ -90,9 +91,16 @@ function CanvasToolbar() {
 
     return (
         <>
-            <div className="h-14 bg-white/60 backdrop-blur-xl border-b border-white/50 grid grid-cols-[1fr_auto_1fr] items-center px-6 shrink-0 transition-colors z-20 relative shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+            <div className="h-14 bg-white/60 backdrop-blur-xl border-b border-white/50 grid grid-cols-[1fr_auto_1fr] items-center px-4 shrink-0 transition-colors z-20 relative shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
                 {/* Left: View Switcher (Preview / Code / Analytics) */}
-                <div className="flex items-center">
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setSidebarOpen(!sidebarOpen)}
+                        className="flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                        title={sidebarOpen ? "Close chat sidebar" : "Open chat sidebar"}
+                    >
+                        <PanelLeftClose className={`w-4 h-4 transition-transform duration-300 ${!sidebarOpen ? 'rotate-180' : ''}`} />
+                    </button>
                     <div className="flex items-center gap-1 bg-gray-50/50 p-1 rounded-full border border-gray-200/60 backdrop-blur-md shadow-inner">
                         <button
                             onClick={() => setActiveView("preview")}
@@ -297,17 +305,17 @@ function CanvasLayout() {
             {/* Dialogue Box Sidebar (Left) - FULL HEIGHT */}
             <motion.div
                 initial={false}
-                animate={{ width: sidebarOpen ? 340 : 0 }}
+                animate={{ width: sidebarOpen ? 400 : 0 }}
                 transition={{ type: "spring", stiffness: 400, damping: 40 }}
                 className="bg-white/70 backdrop-blur-2xl border-r border-white/60 shadow-[4px_0_24px_rgba(0,0,0,0.02)] flex-shrink-0 relative z-10 h-full"
             >
-                <div className="w-[340px] h-full overflow-hidden flex flex-col">
+                <div className="w-[400px] h-full overflow-hidden flex flex-col">
                     <DialogueBox />
                 </div>
             </motion.div>
 
             <div className="flex-1 flex flex-col min-w-0 bg-transparent overflow-hidden relative z-10">
-                <CanvasToolbar />
+                <CanvasToolbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
                 {/* Main Content Area (Pure Flex-Fill for 100% Coverage) */}
                 <div className="flex-1 relative w-full overflow-hidden bg-transparent">
                     <AnimatePresence mode="wait">
