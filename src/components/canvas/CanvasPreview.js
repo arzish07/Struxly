@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useEffect, Suspense } from "react";
+import React, { useEffect, useRef, useState, Suspense } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useCanvas } from "@/context/CanvasContext";
 import { useSearchParams } from "next/navigation";
 import { templates } from "@/data/templates";
 import { LivePreview } from "@/components/dashboard/LivePreview";
-import { Sparkles, ShoppingCart, LayoutDashboard, Rocket, Bell } from "lucide-react";
+import { Sparkles, ShoppingCart, LayoutDashboard, Rocket, Loader2 } from "lucide-react";
 import AwaitingInstructionsCarousel from "./AwaitingInstructionsCarousel";
 
 function CanvasPreviewContent() {
@@ -13,6 +14,27 @@ function CanvasPreviewContent() {
     const searchParams = useSearchParams();
     const templateSlug = searchParams.get('template');
     const initialPrompt = searchParams.get('prompt');
+
+    // "Starting live preview..." indicator state
+    const [showPreviewLoader, setShowPreviewLoader] = useState(false);
+    const prevCodeRef = useRef(generatedCode);
+    const isFirstLoadRef = useRef(true);
+
+    useEffect(() => {
+        // Skip the very first render / DB hydration
+        if (isFirstLoadRef.current) {
+            isFirstLoadRef.current = false;
+            prevCodeRef.current = generatedCode;
+            return;
+        }
+        // Only trigger when code actually changes to a new non-null value
+        if (generatedCode && generatedCode !== prevCodeRef.current) {
+            prevCodeRef.current = generatedCode;
+            setShowPreviewLoader(true);
+            const timer = setTimeout(() => setShowPreviewLoader(false), 2500);
+            return () => clearTimeout(timer);
+        }
+    }, [generatedCode]);
 
     // Fetch template code if we don't have any generated code yet, and the DB has finished loading
     useEffect(() => {
@@ -69,6 +91,35 @@ function CanvasPreviewContent() {
                             inspectorActive={inspectorActive}
                             onElementSelect={selectElement}
                         />
+                        {/* "Starting live preview..." animated indicator */}
+                        <AnimatePresence>
+                            {showPreviewLoader && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                                    className="absolute top-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
+                                >
+                                    <div className="flex items-center gap-2.5 pl-3 pr-4 py-2 bg-white/95 backdrop-blur-md border border-gray-200/80 rounded-full shadow-lg shadow-gray-200/40">
+                                        <Loader2 className="w-3.5 h-3.5 text-indigo-500 animate-spin" />
+                                        <span className="text-[12px] font-semibold text-gray-700 tracking-tight">
+                                            Starting live preview...
+                                        </span>
+                                        {/* Animated progress bar */}
+                                        <div className="absolute bottom-0 left-3 right-3 h-[2px] rounded-full overflow-hidden bg-gray-100">
+                                            <motion.div
+                                                className="h-full bg-gradient-to-r from-indigo-400 to-violet-500 rounded-full"
+                                                initial={{ width: "0%" }}
+                                                animate={{ width: "100%" }}
+                                                transition={{ duration: 2.2, ease: "easeInOut" }}
+                                            />
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                        {/* Inspector mode badge */}
                         {inspectorActive && (
                             <div className="absolute top-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
                                 <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white rounded-full shadow-lg text-[12px] font-medium animate-pulse">
